@@ -18,6 +18,16 @@ async function loadData() {
         return obj;
     });
 
+    // Preencher filtro de marca
+    const makeSelect = document.getElementById('makeFilter');
+    const makes = [...new Set(rawData.map(d => d.Make))].sort();
+    makes.forEach(make => {
+        const opt = document.createElement('option');
+        opt.value = make;
+        opt.textContent = make;
+        makeSelect.appendChild(opt);
+    });
+
     // Inicializa os gráficos após carregar os dados
     updateMainChart();
     updateCostChart();
@@ -28,11 +38,13 @@ async function loadData() {
     function filterData() {
         const usageFilter = document.getElementById('usageFilter')?.value || 'all';
         const regionFilter = document.getElementById('regionFilter')?.value || 'all';
+        const makeFilter = document.getElementById('makeFilter')?.value || 'all';
 
         return rawData.filter(row => {
             const matchesUsage = usageFilter === 'all' || row.Usage_Type === usageFilter;
             const matchesRegion = regionFilter === 'all' || row.Region === regionFilter;
-            return matchesUsage && matchesRegion;
+            const matchesMake = makeFilter === 'all' || row.Make === makeFilter;
+            return matchesUsage && matchesRegion && matchesMake;
         });
     }
 
@@ -80,6 +92,12 @@ async function loadData() {
                     <option value="Australia">Austrália</option>
                     <option value="North America">América do Norte</option>
                     <option value="Europe">Europa</option>
+                </select>
+            </div>
+            <div style="display: flex; flex-direction: column; min-width: 200px;">
+                <label style="font-weight: bold; margin-bottom: 5px; color: #2c3e50;">Filtrar por Marca:</label>
+                <select id="makeFilter">
+                    <option value="all">Todas</option>
                 </select>
             </div>
             <div style="display: flex; flex-direction: column; min-width: 200px;">
@@ -308,6 +326,12 @@ async function loadData() {
     });
 
     document.getElementById('showCosts').addEventListener('change', () => {
+        updateCostChart();
+    });
+
+    // Adicione evento para o filtro de marca
+    document.getElementById('makeFilter').addEventListener('change', () => {
+        updateMainChart();
         updateCostChart();
     });
 
