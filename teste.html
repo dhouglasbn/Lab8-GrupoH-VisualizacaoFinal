@@ -165,12 +165,20 @@ function initControls() {
   usages.forEach(u=>usageChips.appendChild(mkChip(u,state.usages)));
 
   const yearSel=document.getElementById('yearSelect');
+  // Adiciona opção de média geral
+  const optAll=document.createElement('option');
+  optAll.value='all';
+  optAll.textContent='Média Geral';
+  yearSel.appendChild(optAll);
   [...new Set(years)].sort((a,b)=>a-b).forEach(y=>{
     const o=document.createElement('option'); o.value=y; o.textContent=y; yearSel.appendChild(o);
   });
   yearSel.value = state.year;
-  document.getElementById('yearInfo').textContent = `Anos disponíveis: ${minY}–${maxY}`;
-  yearSel.onchange=()=>{ state.year=Number(yearSel.value); refreshAll(); };
+  document.getElementById('yearInfo').textContent = `Anos disponíveis: Média Geral, ${minY}–${maxY}`;
+  yearSel.onchange=()=>{
+    state.year = yearSel.value === 'all' ? null : Number(yearSel.value);
+    refreshAll();
+  };
 
   document.getElementById('normCost').onchange=(e)=>{ state.normCost=e.target.checked; updateCosts(); };
 }
@@ -202,7 +210,7 @@ window.addEventListener('resize', ()=>{heatChart.resize(); costChart.resize();})
 
 /* --- História 1: Heatmap --- */
 function binHeat(data){
-  const tBins=[-20,-10,0,10,20,30,40], cBins=[0,400,800,1200,1600,2000];
+  const tBins=[-10,0,10,20,30,40], cBins=[0,400,800,1200,1600,2000];
   function idx(x,b){ for(let i=0;i<b.length-1;i++) if(x>=b[i]&&x<b[i+1]) return i; return b.length-2;}
   const agg={};
   data.forEach(d=>{
@@ -229,7 +237,7 @@ function updateHeat(){
   const data=getFiltered();
   const {pts,tLabels,cLabels}=binHeat(data);
   const option={
-    title:{text:`Clima × Ciclos × Saúde da Bateria — ${state.year}`,left:'center'},
+    title:{text:`Clima × Ciclos × Saúde da Bateria — ${state.year === null ? 'Média Geral' : state.year}`,left:'center'},
     grid:{top:70,left:120,right:30,bottom:70,containLabel:true},
     tooltip:{formatter:(p)=>{
       const [x,y,val]=p.value; if(val==null) return `<b>Sem dados</b>`; 
@@ -271,14 +279,21 @@ function updateCosts(){
   const avgTot = totals.length? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
 
   const option={
-    title:{text: state.normCost? `Custos Médios por Tipo de Uso — ${state.year} (composição %)` : `Custos Médios por Tipo de Uso — ${state.year} (US$ / mês)`,left:'center'},
+    title:{text: state.normCost
+      ? `Custos Médios por Tipo de Uso — ${state.year === null ? 'Média Geral' : state.year} (composição %)`
+      : `Custos Médios por Tipo de Uso — ${state.year === null ? 'Média Geral' : state.year} (US$ / mês)`,left:'center'},
     grid:{top:90,left:70,right:30,bottom:70,containLabel:true},
     legend:{top:40,data:['Recarga','Manutenção (1/12)','Seguro (1/12)']},
     tooltip:{trigger:'axis',axisPointer:{type:'shadow'},
       valueFormatter:(v)=> state.normCost? `${v.toFixed(1)}%`:`US$ ${v.toFixed(2)}`
     },
     xAxis:{type:'category',data:cats},
-    yAxis:{type:'value',axisLabel:{formatter:(v)=> state.normCost? `${v}%`:`US$ ${v}`}},
+    yAxis:{
+      type:'value',
+      axisLabel:{formatter:(v)=> state.normCost? `${v}%`:`US$ ${v}`},
+      min: state.normCost ? 0 : undefined,
+      max: state.normCost ? 100 : undefined
+    },
     series:[
       {name:'Recarga',type:'bar',stack:'t',data:charge,
        label:{show:true,position:'top',formatter:(p)=> state.normCost? `${p.value.toFixed(0)}%`:`US$ ${p.value.toFixed(0)}`}},
