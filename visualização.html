@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab8 - Grupo H</title>
+<script src="https://fastly.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+<style>
+  :root{
+    --header:#a4dceb;
+    --ink:#222;
+    --chip:#bfe8f0;
+    --chip-border:#8cc3d4;
+    --chip-text:#083a4a;
+    --card:#fff; --stroke:#e5e7eb;
+  }
+  body{font-family:Arial, Helvetica, "Segoe UI", sans-serif;background:#f4f6f9;color:var(--ink);margin:0}
+
+  /* Header no padrão do template */
+  .header-info{padding:30px 50px;background:var(--header)}
+  #header{padding:0 50px}
+  #header h2,#header h4{margin:10px 0}
+  #header p{padding:10px 0;text-align:justify}
+
+  /* Controles */
+  .controls{margin:12px 50px;padding:14px;background:#ecf0f1;border-radius:10px;border:1px solid #e6eaed;display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end}
+  .control{display:flex;flex-direction:column;gap:6px;min-width:240px}
+  .chips{display:flex;flex-wrap:wrap;gap:10px}
+  .chip{padding:6px 12px;border-radius:999px;border:1px solid var(--chip-border);cursor:pointer;font-weight:700;background:#fff;color:var(--chip-text)}
+  .chip.active{background:var(--chip);border-color:transparent}
+  select{padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff}
+  .info-tip{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:6px;border-radius:50%;background:#e2f6fb;border:1px solid #8cc3d4;color:#0a4d5f;font-weight:700;cursor:help}
+
+  /* Abas */
+  .view-tabs{display:flex;gap:8px;margin:10px 50px 0}
+  .tab-btn{padding:10px 14px;border:1px solid #34495e;border-radius:10px;background:#fff;cursor:pointer;font-weight:700}
+  .tab-btn.active{background:#34495e;color:#fff}
+
+  /* KPIs */
+  .kpis{margin:10px 50px 0;display:flex;gap:16px;flex-wrap:wrap}
+  .kpi{background:var(--card);border:1px solid var(--stroke);border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.08);padding:12px 16px;min-width:220px}
+  .kpi .t{color:#64748b;font-weight:600}
+  .kpi .v{font-size:22px;font-weight:800;color:#0f172a}
+  .hidden{display:none!important}
+
+  /* Cards / gráficos */
+  .card{margin:12px 50px;background:#fff;border:1px solid var(--stroke);border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,.06);padding:12px}
+  .aux-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:4px 2px 8px}
+  .badge{padding:2px 8px;border-radius:999px;background:#eef5ff;border:1px solid #cfe2ff;color:#002b6b;font-weight:600;font-size:12px}
+  .caption{color:#334155;margin:6px 2px 8px}
+  .chart{width:100%;height:520px}
+
+  /* Legendas locais */
+  .legend-local{display:flex;gap:20px;justify-content:center;margin-top:8px}
+  .legend-item{display:flex;align-items:center;gap:6px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .dot.good{background:#27ae60}.dot.mid{background:#f39c12}.dot.bad{background:#e74c3c}
+
+  /* Rodapé (dicas) */
+  #footer{height:2%;margin-top:60px}
+  #footer p{padding:20px 50px 0}
+  #footer ul{padding:0 50px 10px 75px}
+</style>
+</head>
+<body>
+
+<!-- Cabeçalho -->
+<div class="header-info">
+  <table style="width:100%;border:0">
+    <tr>
+      <td style="text-align:left;vertical-align:top">
+        <table style="border:0">
+          <tr>
+            <td style="width:70px">
+              <img src="https://maxmcz.github.io/visualizacao-de-dados_exemplo/UFCG_logo_png.png" alt="Brasão UFCG" style="margin-top:5px;height:62px">
+            </td>
+            <td>
+              <div style="line-height:1.4">
+                <div><strong>UNIVERSIDADE FEDERAL DE CAMPINA GRANDE - UFCG</strong></div>
+                <div>CENTRO DE ENGENHARIA ELÉTRICA E INFORMÁTICA - CEEI</div>
+                <div>UNIDADE ACADÊMICA DE SISTEMAS E COMPUTAÇÃO - UASC</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+      <td style="text-align:right;vertical-align:top">
+        <div>Disciplina: Visualização de Dados</div>
+        <div>Professor: Maxwell Guimarães de Oliveira</div>
+        <div>Período: 2025.1</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Título + resumo -->
+<div id="header">
+  <h2 style="text-align:center">Projeto de Visualização Interativa de Dados</h2>
+  <h4 style="text-align:center">
+    <u>Grupo H</u>: Daniel Ferreira Alves, Matheus Victor Pereira, Dhouglas Nobrega,
+    Mateus Honório Rodrigues, Andrey Di Navaronne
+  </h4>
+  <h2 style="text-align:center"><strong>Vida, Custo e Impacto: o verdadeiro valor dos veículos elétricos</strong></h2>
+  <p>Este painel explora <b>duas histórias</b> com dados reais: <b>(1)</b> como
+    <i>temperatura</i> e <i>ciclos</i> se relacionam com a <b>saúde média da bateria</b>;
+    <b>(2)</b> como se compõe o <b>custo mensal</b> por tipo de uso. Filtre por <b>região</b>,
+    <b>tipo de uso</b> e <b>ano</b>.
+  </p>
+</div>
+
+<!-- Controles -->
+<div class="controls">
+  <div class="control">
+    <label>Região</label>
+    <div class="chips" id="regionChips"></div>
+  </div>
+  <div class="control">
+    <label>Tipo de uso</label>
+    <div class="chips" id="usageChips"></div>
+  </div>
+  <div class="control">
+    <label>Ano <span class="info-tip" title="Anos disponíveis: Média Geral, 2015–2024">i</span></label>
+    <select id="yearSelect"></select>
+  </div>
+</div>
+
+<!-- Abas -->
+<div class="view-tabs">
+  <button class="tab-btn active" data-view="heat">Clima × Bateria</button>
+  <button class="tab-btn" data-view="costs">Custos</button>
+</div>
+
+<!-- KPIs -->
+<div class="kpis">
+  <div class="kpi" id="kpi-bh-card"><div class="t">Média Saúde da Bateria</div><div class="v" id="kpi-bh">–</div></div>
+  <div class="kpi hidden" id="kpi-cost-card"><div class="t">Custo Mensal (médio)</div><div class="v" id="kpi-cost">–</div></div>
+</div>
+
+<!-- HISTÓRIA 1 -->
+<div class="card" id="card-heat">
+  <div class="aux-row">
+    <span class="badge">História 1</span>
+    <div class="caption">Mais <b>extremos de temperatura</b> e mais <b>ciclos</b> tendem a reduzir a
+      <b>saúde média da bateria</b>. Use os filtros para comparar anos, regiões e usos.</div>
+  </div>
+  <div id="chart-heat" class="chart"></div>
+  <div class="legend-local" id="legend-heat">
+    <div class="legend-item"><div class="dot bad"></div><span><b>Saúde da bateria</b> ≈ 60% (pior)</span></div>
+    <div class="legend-item"><div class="dot mid"></div><span><b>Saúde da bateria</b> 80% — 90% (média)</span></div>
+    <div class="legend-item"><div class="dot good"></div><span><b>Saúde da bateria</b> &gt; 90% (melhor)</span></div>
+  </div>
+</div>
+
+<!-- HISTÓRIA 2 -->
+<div class="card hidden" id="card-costs">
+  <div class="aux-row" style="justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="badge">História 2</span>
+      <div class="caption">
+        Composição do <b>custo mensal</b> por tipo de uso (Recarga + Manutenção/12 + Seguro/12).
+        Barras <b>ordenadas</b> pelo total; linha = <b>média geral</b>.
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-weight:700">
+      Composição em % <input type="checkbox" id="normCost">
+    </label>
+  </div>
+  <div id="chart-costs" class="chart"></div>
+  <div class="legend-local" id="legend-costs">
+    <div class="legend-item"><span style="display:inline-block;width:12px;height:12px;background:#4e79a7;border-radius:2px"></span><span>Recarga</span></div>
+    <div class="legend-item"><span style="display:inline-block;width:12px;height:12px;background:#59a14f;border-radius:2px"></span><span>Manutenção (1/12)</span></div>
+    <div class="legend-item"><span style="display:inline-block;width:12px;height:12px;background:#f28e2b;border-radius:2px"></span><span>Seguro (1/12)</span></div>
+  </div>
+</div>
+
+<!-- Dicas -->
+<div id="footer">
+  <p><b>Dicas para interagir com a visualização</b>:</p>
+  <ul>
+    <li>Use as <b>abas</b> para alternar entre as duas histórias.</li>
+    <li>No heatmap, passe o mouse para ver <b>temperatura</b>, <b>faixa de ciclos</b> e <b>saúde média</b>; a escala vai de <b>60%</b> (vermelho) a <b>100%</b> (verde).</li>
+    <li>Nos custos, ative <b>Composição em %</b> para comparar partes; desative para ver valores (US$) e a <b>linha de média</b>.</li>
+  </ul>
+</div>
+
+<script>
+const CSV_NAME='electric_vehicle_analytics.csv';
+let RAW=[];
+const MAP_REGION_PT={'North America':'América do Norte','South America':'América do Sul','Europe':'Europa','Asia':'Ásia','Africa':'África','Oceania':'Oceania','Australia':'Oceania'};
+const MAP_USAGE_PT={'Personal':'Pessoal','Commercial':'Comercial','Fleet':'Frota'};
+const PT2RAW_REGION=Object.fromEntries(Object.entries(MAP_REGION_PT).map(([en,pt])=>[pt,en]));
+const PT2RAW_USAGE =Object.fromEntries(Object.entries(MAP_USAGE_PT ).map(([en,pt])=>[pt,en]));
+
+async function loadCSV(){ const r=await fetch(CSV_NAME,{cache:'no-store'}); RAW=parseCSV(await r.text()); }
+function parseCSV(text){
+  const [head,...rows]=text.trim().split(/\r?\n/); const cols=head.split(',');
+  return rows.map(line=>{const vals=line.split(','); const o={}; cols.forEach((c,i)=>o[c]=(vals[i]!==''&&!isNaN(vals[i]))?Number(vals[i]):vals[i]); return o;});
+}
+
+let state={regions:new Set(),usages:new Set(),year:null,normCost:false};
+
+function initControls(){
+  const regions=[...new Set(RAW.map(d=>d.Region))].sort();
+  const usages =[...new Set(RAW.map(d=>d.Usage_Type))].sort();
+  const years  =RAW.map(d=>d.Year).filter(n=>typeof n==='number');
+  const minY=Math.min(...years), maxY=Math.max(...years);
+  regions.forEach(r=>state.regions.add(r));
+  usages.forEach(u=>state.usages.add(u));
+  state.year=minY;
+
+  const regionChips=document.getElementById('regionChips');
+  regions.map(r=>MAP_REGION_PT[r]||r).sort().forEach(pt=>{
+    const el=document.createElement('div'); el.className='chip active'; el.textContent=pt;
+    el.onclick=()=>{const raw=PT2RAW_REGION[pt]||pt; if(state.regions.has(raw)){state.regions.delete(raw); el.classList.remove('active');}
+                    else{state.regions.add(raw); el.classList.add('active');} refreshAll();};
+    regionChips.appendChild(el);
+  });
+
+  const usageChips=document.getElementById('usageChips');
+  usages.map(u=>MAP_USAGE_PT[u]||u).sort().forEach(pt=>{
+    const el=document.createElement('div'); el.className='chip active'; el.textContent=pt;
+    el.onclick=()=>{const raw=PT2RAW_USAGE[pt]||pt; if(state.usages.has(raw)){state.usages.delete(raw); el.classList.remove('active');}
+                    else{state.usages.add(raw); el.classList.add('active');} refreshAll();};
+    usageChips.appendChild(el);
+  });
+
+  const yearSel=document.getElementById('yearSelect');
+  const optAll=document.createElement('option'); optAll.value='all'; optAll.textContent='Média Geral'; yearSel.appendChild(optAll);
+  [...new Set(years)].sort((a,b)=>a-b).forEach(y=>{const o=document.createElement('option'); o.value=y; o.textContent=y; yearSel.appendChild(o);});
+  yearSel.value=state.year;
+  yearSel.onchange=()=>{state.year=(yearSel.value==='all')?null:Number(yearSel.value); refreshAll();};
+
+  document.getElementById('normCost').onchange=e=>{ state.normCost=e.target.checked; if(activeView()==='costs') updateCosts(); };
+}
+
+function updateKPIs(data){
+  const mean=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length):NaN;
+  const fmt=(n,dec=1)=>isFinite(n)? n.toLocaleString('pt-BR',{maximumFractionDigits:dec}):'–';
+  const bh=mean(data.map(d=>d['Battery_Health_%']));
+  const monthly=mean(data.map(d=>(d.Monthly_Charging_Cost_USD||0)+(d.Maintenance_Cost_USD||0)/12+(d.Insurance_Cost_USD||0)/12));
+  document.getElementById('kpi-bh').textContent=fmt(bh,1)+'%';
+  document.getElementById('kpi-cost').textContent='US$ '+fmt(monthly,2);
+}
+function toggleKPIs(view){
+  document.getElementById('kpi-bh-card').classList.toggle('hidden',view!=='heat');
+  document.getElementById('kpi-cost-card').classList.toggle('hidden',view!=='costs');
+}
+
+const heatChart=echarts.init(document.getElementById('chart-heat'));
+const costChart=echarts.init(document.getElementById('chart-costs'));
+window.addEventListener('resize',()=>{heatChart.resize(); costChart.resize();});
+
+/* ---- Heatmap ---- */
+function binHeat(data){
+  const tBins=[-20,-10,0,10,20,30,40], cBins=[0,400,800,1200,1600,2000];
+  const tLabels=tBins.slice(0,-1).map((_,i)=>`${tBins[i]} a ${tBins[i+1]}°C`);
+  const cLabels=cBins.slice(0,-1).map((_,i)=>`${cBins[i]}–${cBins[i+1]} ciclos`);
+  const idx=(x,b)=>{for(let i=0;i<b.length-1;i++) if(x>=b[i]&&x<b[i+1]) return i; return -1;};
+  const grid=[...Array(cLabels.length)].map(()=>Array(tLabels.length).fill(null));
+  data.forEach(d=>{
+    if(typeof d.Temperature_C!=='number'||typeof d.Charge_Cycles!=='number') return;
+    const ti=idx(d.Temperature_C,tBins), ci=idx(d.Charge_Cycles,cBins);
+    if(ti<0||ci<0) return;
+    const cur=grid[ci][ti]; const bh=d['Battery_Health_%']||0;
+    grid[ci][ti]=cur? {sum:cur.sum+bh,n:cur.n+1} : {sum:bh,n:1};
+  });
+  const means=grid.map(row=>row.map(cell=>cell? Number((cell.sum/cell.n).toFixed(1)) : null));
+  // remove colunas sem dados
+  const keepCols=[]; for(let x=0;x<means[0].length;x++){ let ok=false; for(let y=0;y<means.length;y++){ if(means[y][x]!=null){ok=true;break;} } if(ok) keepCols.push(x); }
+  const newLabels=keepCols.map(i=>tLabels[i]);
+  const pts=[]; for(let y=0;y<means.length;y++){ keepCols.forEach((x,newX)=>{ pts.push([newX,y,means[y][x]]); }); }
+  return {pts,tLabels:newLabels,cLabels};
+}
+function updateHeat(){
+  const {pts,tLabels,cLabels}=binHeat(getFiltered());
+  heatChart.setOption({
+    title:{text:`Clima × Ciclos × Saúde da Bateria — ${state.year??'Média Geral'}`,left:'center'},
+    // >>> mais espaço à direita para a colorbar
+    grid:{top:80,left:130,right:140,bottom:80,containLabel:true},
+    tooltip:{formatter:(p)=>{const[x,y,v]=p.value; return v==null?'<b>Sem dados</b>':`<b>Temperatura:</b> ${tLabels[x]}<br><b>Ciclos:</b> ${cLabels[y]}<br><b>Saúde média:</b> ${v}%`;}},
+    xAxis:{type:'category',data:tLabels,axisLabel:{rotate:0,interval:0}}, /* rótulos 100% horizontais */
+    yAxis:{type:'category',data:cLabels},
+    visualMap:{min:60,max:100,orient:'vertical',right:20,top:'middle',calculable:true,inRange:{color:['#e74c3c','#f39c12','#27ae60']},formatter:v=>`${v}%`},
+    series:[{type:'heatmap',data:pts,emphasis:{itemStyle:{borderColor:'#333',borderWidth:1}},progressive:0}]
+  });
+}
+
+/* ---- Custos ---- */
+function updateCosts(){
+  const data=getFiltered(); const groups={}; data.forEach(d=>{(groups[d.Usage_Type]??=[]).push(d);});
+  const rows=Object.keys(groups).map(cat=>{
+    const g=groups[cat], mean=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length):0;
+    const charge=mean(g.map(x=>x.Monthly_Charging_Cost_USD||0));
+    const maint =mean(g.map(x=>(x.Maintenance_Cost_USD||0)/12));
+    const ins   =mean(g.map(x=>(x.Insurance_Cost_USD||0)/12));
+    return {cat,charge,maint,ins,total:charge+maint+ins};
+  }).sort((a,b)=>b.total-a.total);
+
+  const catsPT=rows.map(r=>MAP_USAGE_PT[r.cat]||r.cat);
+  const charge=rows.map(r=>state.normCost?r.charge/r.total*100:r.charge);
+  const maint =rows.map(r=>state.normCost?r.maint /r.total*100:r.maint);
+  const ins   =rows.map(r=>state.normCost?r.ins   /r.total*100:r.ins);
+  const totals=rows.map(r=>r.total);
+  const avg=totals.length? totals.reduce((a,b)=>a+b,0)/totals.length : 0;
+
+  costChart.setOption({
+    title:{text: state.normCost?`Custos Médios por Tipo de Uso — ${state.year??'Média Geral'} (composição %)`:`Custos Médios por Tipo de Uso — ${state.year??'Média Geral'} (US$ / mês)`,left:'center'},
+    grid:{top:90,left:70,right:30,bottom:80,containLabel:true},
+    legend:{show:false},
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'},valueFormatter:v=>state.normCost?`${v.toFixed(1)}%`:`US$ ${v.toFixed(2)}`},
+    xAxis:{type:'category',data:catsPT},
+    yAxis:{type:'value',min:0,max: state.normCost?100:null,axisLabel:{formatter:v=>state.normCost?`${v}%`:`US$ ${v}`}},
+    series:[
+      {name:'Recarga',type:'bar',stack:'t',data:charge,label:{show:true,position:'top',formatter:p=>state.normCost?`${p.value.toFixed(0)}%`:`US$ ${p.value.toFixed(0)}`}},
+      {name:'Manutenção (1/12)',type:'bar',stack:'t',data:maint},
+      {name:'Seguro (1/12)',type:'bar',stack:'t',data:ins},
+      ...(state.normCost?[]:[{name:'Média (Total)',type:'line',data:catsPT.map(()=>avg),symbol:'none',lineStyle:{type:'dashed'},color:'#2c3e50'}])
+    ],
+    color:['#4e79a7','#59a14f','#f28e2b']
+  });
+}
+
+/* Abas & refresh */
+function activeView(){return document.querySelector('.tab-btn.active')?.dataset.view||'heat';}
+function showView(which){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===which));
+  document.getElementById('card-heat').classList.toggle('hidden',which!=='heat');
+  document.getElementById('card-costs').classList.toggle('hidden',which!=='costs');
+  toggleKPIs(which);
+  if(which==='heat'){updateHeat();heatChart.resize();} else {updateCosts();costChart.resize();}
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+
+function getFiltered(){
+  return RAW.filter(d =>
+    (state.regions.size===0||state.regions.has(d.Region)) &&
+    (state.usages.size===0 ||state.usages.has(d.Usage_Type)) &&
+    (state.year==null || d.Year===state.year)
+  );
+}
+function refreshAll(){ const data=getFiltered(); updateKPIs(data); showView(activeView()); }
+
+/* Boot */
+(async function main(){
+  await loadCSV();
+  initControls();
+  showView('heat');
+  refreshAll();
+})();
+</script>
+</body>
+</html>
